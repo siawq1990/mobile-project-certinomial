@@ -1,5 +1,7 @@
+import 'package:certinomial/interfces/pdfCoverter.dart';
 import 'package:certinomial/services/auth.dart';
 import 'package:flutter/material.dart';
+import 'package:certinomial/services/database.dart';
 
 enum WidgetMarker { documents, folders }
 
@@ -13,6 +15,7 @@ class home extends StatefulWidget {
 class _homeState extends State<home> {
   WidgetMarker selectedWidgetMarker = WidgetMarker.documents;
   Authentication auth = Authentication();
+  dbservices db = dbservices();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,6 +28,7 @@ class _homeState extends State<home> {
               onPressed: () {
                 Authentication.signOutFacebook();
                 Authentication.signOutGoogle();
+                Navigator.popUntil(context, ModalRoute.withName('/Login'));
               },
               child: Text('Logout', textAlign: TextAlign.center))
         ],
@@ -32,16 +36,25 @@ class _homeState extends State<home> {
       body: Container(
         child: Center(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               //username
               Text(
                 "Sia Handsome",
                 textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               //user role
               Text(
                 "Student",
                 textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -54,7 +67,7 @@ class _homeState extends State<home> {
                     },
                     child: Text(
                       "Documents",
-                      style: TextStyle(color: Colors.black12),
+                      style: TextStyle(color: Colors.black54),
                     ),
                   ),
                   FlatButton(
@@ -65,7 +78,7 @@ class _homeState extends State<home> {
                     },
                     child: Text(
                       "Folders",
-                      style: TextStyle(color: Colors.black12),
+                      style: TextStyle(color: Colors.black54),
                     ),
                   ),
                 ],
@@ -93,21 +106,81 @@ class _homeState extends State<home> {
 
   Widget getDocumentWidget() {
     return Container(
-      child: Expanded(
-          child: Container(
-        height: 200,
-        color: Colors.red,
-      )),
+      child: Column(
+        children: <Widget>[
+          Center(
+            child: Expanded(
+              child: Container(
+                  height: 300,
+                  margin: EdgeInsets.all(10),
+                  color: Colors.red,
+                  child: FutureBuilder(
+                    future: db.listExample(),
+                    builder: (BuildContext context,
+                        AsyncSnapshot<dynamic> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        return ListView.builder(
+                            itemCount: snapshot.data?.length ?? 0,
+                            itemBuilder: (context, index) {
+                              return Column(
+                                children: <Widget>[
+                                  Container(
+                                    child: Text(snapshot.data[index]),
+                                  )
+                                ],
+                              );
+                            });
+                      }
+                      return Container(child: Text('no data'));
+                    },
+                  )),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget getFoldersWidget() {
     return Container(
-      child: Expanded(
-          child: Container(
-        height: 300,
-        color: Colors.green,
-      )),
+      child: Column(
+        children: <Widget>[
+          Center(
+            child: Expanded(
+              child: Container(
+                height: 300,
+                margin: EdgeInsets.all(10),
+                child: ListView.builder(
+                    itemCount: 3,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Column(
+                        children: <Widget>[
+                          Container(
+                            child: Text(
+                              'academic',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        ],
+                      );
+                    }),
+              ),
+            ),
+          ),
+          FlatButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => pdfConverter(),
+                    ));
+              },
+              child: Text('Create new folders'))
+        ],
+      ),
     );
   }
 }

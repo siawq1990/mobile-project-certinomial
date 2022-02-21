@@ -7,6 +7,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:another_flushbar/flushbar_helper.dart';
+import 'package:another_flushbar/flushbar_route.dart';
+import 'package:flutter_document_picker/flutter_document_picker.dart';
 
 class pdfConverter extends StatefulWidget {
   @override
@@ -19,6 +23,7 @@ class _MyAppState extends State<pdfConverter> {
 
   TextEditingController pdfName = new TextEditingController();
 
+  // ignore: prefer_final_fields
   List<File> _image = [];
 
   @override
@@ -98,6 +103,7 @@ class _MyAppState extends State<pdfConverter> {
 
 //get Image from gallery
   getImageFromGallery() async {
+    // ignore: deprecated_member_use
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
     setState(() {
       if (pickedFile != null) {
@@ -110,6 +116,7 @@ class _MyAppState extends State<pdfConverter> {
 
 //Get Image from Camera
   Future getImageFromCamera() async {
+    // ignore: deprecated_member_use
     final pickedFile = await picker.getImage(source: ImageSource.camera);
     setState(() {
       if (pickedFile != null) {
@@ -136,19 +143,36 @@ class _MyAppState extends State<pdfConverter> {
 //SavePDF
   savePDF() async {
     final dir = await getExternalStorageDirectory();
-    final file = File('${dir.path}/${pdfName.text}.pdf');
-
+    final file = File('${dir!.path}/${pdfName.text}.pdf');
     await file.writeAsBytes(await pdf.save());
+
+    firebase_storage.UploadTask task = await uploadFile(file, pdfName.text);
     showPrintedMessage('success', 'saved to documents');
+  }
+
+  Future<firebase_storage.UploadTask> uploadFile(File file, String name) async {
+    firebase_storage.UploadTask uploadTask;
+
+    // Create a Reference to the file
+    firebase_storage.Reference ref =
+        firebase_storage.FirebaseStorage.instance.ref().child('$name.pdf');
+    print("Uploading..!");
+
+    uploadTask = ref.putData(await file.readAsBytes());
+
+    print("done..!");
+    return Future.value(uploadTask);
   }
 
 //For the messages that pops up
   showPrintedMessage(String title, String msg) {
+    // ignore: avoid_single_cascade_in_expression_statements
     Flushbar(
       title: title,
       message: msg,
+      // ignore: prefer_const_constructors
       duration: Duration(seconds: 3),
-      icon: Icon(
+      icon: const Icon(
         Icons.info,
         color: Colors.green,
       ),

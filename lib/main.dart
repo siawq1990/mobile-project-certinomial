@@ -1,4 +1,7 @@
+import 'package:certinomial/interfces/biometriclogin.dart';
+import 'package:certinomial/interfces/home.dart';
 import 'package:certinomial/interfces/loginpage.dart';
+import 'package:certinomial/interfces/pdfCoverter.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -15,11 +18,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      initialRoute: '/Login',
+      routes: {
+        '/': (context) => home(),
+        '/Login': (context) => LoginPage(),
+        '/Bio': (context) => FirstPage(),
+        '/pdf': (context) => pdfConverter()
+      },
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: LoginPage(),
     );
   }
 }
