@@ -11,6 +11,11 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:another_flushbar/flushbar_helper.dart';
 import 'package:another_flushbar/flushbar_route.dart';
 import 'package:flutter_document_picker/flutter_document_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+enum SocialMedia { facebook, twitter, whatsapp }
+String file_url = '';
 
 class pdfConverter extends StatefulWidget {
   @override
@@ -29,76 +34,133 @@ class _MyAppState extends State<pdfConverter> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.green[400],
-          title: Text("PDF Converter"),
-          actions: [
-            IconButton(
-                icon: Icon(Icons.picture_as_pdf),
-                onPressed: () {
-                  createPDF();
-                  savePDF();
-                })
-          ],
-        ),
-        floatingActionButton: SpeedDial(
-          backgroundColor: Colors.green[300],
-          overlayColor: Colors.black,
-          overlayOpacity: 0.4,
-          animatedIcon: AnimatedIcons.menu_close,
-          children: [
-            //Images
-            SpeedDialChild(
-              child: Icon(Icons.image),
-              label: 'Insert Image',
-              backgroundColor: Colors.green[300],
-              onTap: () => getImageFromGallery(),
-            ),
-            //Camera
-            SpeedDialChild(
-              child: Icon(Icons.camera),
-              label: 'Capture Image',
-              backgroundColor: Colors.green[300],
-              onTap: () => getImageFromCamera(),
-            )
-          ],
-        ),
-        body: Center(
-            child: new Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                child: TextField(
-                  controller: pdfName,
-                  textAlign: TextAlign.left,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'PLEASE ENTER THE PDF NAME',
-                    hintStyle: TextStyle(color: Colors.grey),
-                  ),
+      appBar: AppBar(
+        backgroundColor: Colors.green[400],
+        // ignore: prefer_const_constructors
+        title: Text("PDF Converter"),
+        actions: [
+          IconButton(
+              icon: Icon(Icons.picture_as_pdf),
+              onPressed: () {
+                createPDF();
+                savePDF();
+              })
+        ],
+      ),
+      floatingActionButton: SpeedDial(
+        backgroundColor: Colors.green[300],
+        overlayColor: Colors.black,
+        overlayOpacity: 0.4,
+        animatedIcon: AnimatedIcons.menu_close,
+        children: [
+          //Images
+          SpeedDialChild(
+            child: Icon(Icons.image),
+            label: 'Insert Image',
+            backgroundColor: Colors.green[300],
+            onTap: () => getImageFromGallery(),
+          ),
+          //Camera
+          SpeedDialChild(
+            child: Icon(Icons.camera),
+            label: 'Capture Image',
+            backgroundColor: Colors.green[300],
+            onTap: () => getImageFromCamera(),
+          )
+        ],
+      ),
+      body: Center(
+          child: new Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(
+              child: TextField(
+                controller: pdfName,
+                textAlign: TextAlign.left,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'PLEASE ENTER THE PDF NAME',
+                  hintStyle: TextStyle(color: Colors.grey),
                 ),
               ),
             ),
-            SizedBox(
-              height: 400.0,
-              width: 400.0,
-              child: _image != null
-                  ? ListView.builder(
-                      itemCount: _image.length,
-                      itemBuilder: (context, index) => Container(
-                          height: 400,
-                          width: double.infinity,
-                          margin: EdgeInsets.all(8),
-                          child: Image.file(
-                            _image[index],
-                            fit: BoxFit.cover,
-                          )),
-                    )
-                  : Container(),
+          ),
+          SizedBox(
+            height: 400.0,
+            width: 400.0,
+            child: _image != null
+                ? ListView.builder(
+                    itemCount: _image.length,
+                    itemBuilder: (context, index) => Container(
+                        height: 400,
+                        width: double.infinity,
+                        margin: EdgeInsets.all(8),
+                        child: Image.file(
+                          _image[index],
+                          fit: BoxFit.cover,
+                        )),
+                  )
+                : Container(),
+          ),
+        ],
+      )),
+      bottomNavigationBar: buidSocialWidget(),
+    );
+  }
+
+  Widget buildSocialButton({
+    required IconData icon,
+    Color? color,
+    required VoidCallback onClicked,
+  }) =>
+      InkWell(
+        child: Container(
+          width: 64,
+          height: 64,
+          child: Center(
+            child: FaIcon(icon, color: color, size: 40),
+          ),
+        ),
+        onTap: onClicked,
+      );
+
+  Widget buidSocialWidget() => Card(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            buildSocialButton(
+              icon: FontAwesomeIcons.facebookSquare,
+              color: Color(0xFF0075fc),
+              onClicked: () => share(SocialMedia.facebook),
+            ),
+            buildSocialButton(
+              icon: FontAwesomeIcons.twitter,
+              color: Color(0xFF1da1f2),
+              onClicked: () => share(SocialMedia.twitter),
+            ),
+            buildSocialButton(
+              icon: FontAwesomeIcons.whatsapp,
+              color: Color(0xFF00d856),
+              onClicked: () => share(SocialMedia.whatsapp),
             ),
           ],
-        )));
+        ),
+      );
+
+  Future share(SocialMedia socialPlatform) async {
+    final subject = 'pdf file';
+    final urlShare = Uri.encodeComponent(file_url);
+
+    final urls = {
+      SocialMedia.facebook:
+          'https://www.facebook.com/sharer/sharer.php?u=$urlShare',
+      SocialMedia.twitter: 'https://twitter.com/intent/tweet?url=$urlShare',
+      SocialMedia.whatsapp: 'https://api.whatsapp.com/send?text=$urlShare'
+    };
+    final url = urls[socialPlatform]!;
+
+    await launch(url);
   }
 
 //get Image from gallery
@@ -156,10 +218,12 @@ class _MyAppState extends State<pdfConverter> {
     // Create a Reference to the file
     firebase_storage.Reference ref =
         firebase_storage.FirebaseStorage.instance.ref().child('$name.pdf');
+
     print("Uploading..!");
 
     uploadTask = ref.putData(await file.readAsBytes());
-
+    var strgurl = await ref.getDownloadURL();
+    file_url = strgurl.toString();
     print("done..!");
     return Future.value(uploadTask);
   }
